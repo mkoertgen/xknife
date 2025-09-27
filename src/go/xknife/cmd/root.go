@@ -35,12 +35,16 @@ var cfgFile string
 var userName string
 var userId string
 var pageSize int
-var xClient, _ = gotwi.NewClient(&gotwi.NewClientInput{
-	AuthenticationMethod: gotwi.AuthenMethodOAuth2BearerToken,
-})
+var xClient *gotwi.Client
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(func() {
+		if err := initTwitterClient(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to initialize Twitter client: %v\n", err)
+			// Don't exit here, let the commands handle the error
+		}
+	})
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.xknife.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&userName, "user", "u", "mkoertg", "X user account name")
 	rootCmd.PersistentFlags().StringVar(&userId, "id", "", "X user id")
@@ -79,4 +83,17 @@ func initConfig() {
 			}
 		}
 	}
+}
+
+func initTwitterClient() error {
+	client, err := gotwi.NewClient(&gotwi.NewClientInput{
+		AuthenticationMethod: gotwi.AuthenMethodOAuth2BearerToken,
+	})
+	
+	if err != nil {
+		return fmt.Errorf("failed to create Twitter client: %v", err)
+	}
+	
+	xClient = client
+	return nil
 }
